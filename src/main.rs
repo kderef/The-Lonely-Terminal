@@ -4,24 +4,18 @@
 mod config;
 mod rl_util;
 
-use config::game_defaults;
+use config::{game_defaults, win};
 
 use raylib::prelude::*;
 
 fn main() {
     let (mut rl, thread) = raylib::init()
-        .size(config::window::W, config::window::H)
-        .title(config::window::TITLE)
+        .size(win::W, win::H)
+        .title(win::TITLE)
         .build();
 
     // initialization
-    let camera = Camera3D::perspective(
-        vec3![0.0, 2.0, 4.0],
-        vec3![0.0, 2.0, 0.0],
-        vec3![0.0, 1.0, 0.0],
-        game_defaults::FOV,
-    );
-
+    let camera = game_defaults::default_camera();
     let cam_mode = CameraMode::CAMERA_FIRST_PERSON;
 
     rl.hide_cursor();
