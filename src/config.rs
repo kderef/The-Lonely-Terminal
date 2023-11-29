@@ -1,11 +1,15 @@
 pub mod win {
     pub const TITLE: &str = "The Lonely Terminal";
-    pub const W: i32 = 1000;
-    pub const H: i32 = 650;
+    pub const W: i32 = 1920;
+    pub const H: i32 = 1080;
 }
 
 pub mod font {
-    pub const FIRACODE: &[u8] = include_bytes!("..\\font\\FiraCodeNerdFontPropo-Regular.ttf");
+    #[cfg(target_os = "windows")]
+    pub const FIRACODE: &str = ".\\font\\FiraCodeNerdFont-Regular.ttf";
+
+    #[cfg(any(target_os = "linux", target_os = "macos"))]
+    pub const FIRACODE: &str = "./font/FiraCodeNerdFont-Regular.ttf";
 }
 
 pub mod game_defaults {

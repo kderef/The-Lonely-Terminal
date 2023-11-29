@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from os import system, path
 import os, platform, pathlib
 
@@ -44,6 +45,9 @@ cp(exe, bundle)
 
 print(f"> copying fonts to {bundle}")
 cp(fonts, bundle_fonts)
+
+print(f"> copying DLLs to {bundle}")
+cp(f".{sep}dll", bundle)
 
 print("-----------------------")
 print("! A bundle has been created in the current directory.")
