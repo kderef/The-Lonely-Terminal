@@ -5,7 +5,7 @@ pub mod win {
 }
 
 pub mod font {
-    pub const SMALL: u32 = 10;
+    pub const FIRACODE: &[u8] = include_bytes!("..\\font\\FiraCodeNerdFontPropo-Regular.ttf");
 }
 
 pub mod game_defaults {

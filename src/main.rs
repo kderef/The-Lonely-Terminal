@@ -1,13 +1,14 @@
 // no terminal window
-#![cfg_attr(target_os = "windows", windows_subsystem = "windows")]
+#![cfg_attr(all(target_os = "windows", not(debug_assertions)), windows_subsystem = "windows")]
 
 mod config;
 mod rl_util;
 mod game;
 
-use config::{game_defaults, win};
+use config::{game_defaults, win, font};
 use raylib::prelude::*;
 use game::*;
+use rl_util::*;
 
 fn handle_keys(rl: &mut RaylibHandle, key: Option<KeyboardKey>, state: &mut GameState) {
     if let Some(key) = key {
@@ -36,7 +37,6 @@ fn main() {
     rl.hide_cursor();
     rl.set_target_fps(game_defaults::TARGET_FPS);
     rl.set_exit_key(None);
-    rl.load_font_from_image(_, image, key, first_char)
     
     let mut game_state = GameState::TitleScreen;
 
