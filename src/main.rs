@@ -25,7 +25,7 @@ fn handle_keys(rl: &mut RaylibHandle, key: Option<KeyboardKey>, state: &mut Game
                     GameState::Paused
                 };
             }
-            _ => todo!()
+            _ => {}
         }
     }
 }
@@ -34,13 +34,20 @@ fn main() {
     let (mut rl, thread) = raylib::init()
         .size(win::W, win::H)
         .title(win::TITLE)
-        .vsync()
+        .msaa_4x()
         .build();
+
+    let monitor = get_monitor_info( get_current_monitor() );
+    if let Ok(monitor_info) = monitor {
+        rl.set_window_size(monitor_info.width, monitor_info.height);
+    }
+    rl.toggle_fullscreen();
 
     // initialization
     let mut camera = game_defaults::default_camera();
     let cam_mode = CameraMode::CAMERA_FIRST_PERSON;
 
+    println!("{:?}", rl.get_window_state());
     rl.set_target_fps(game_defaults::TARGET_FPS);
     rl.set_exit_key(None);
     rl.set_mouse_scale(0.0, 0.0);
