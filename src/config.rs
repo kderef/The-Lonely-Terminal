@@ -1,7 +1,11 @@
 pub mod win {
     pub const TITLE: &str = "The Lonely Terminal";
-    pub const W: i32 = 700;
-    pub const H: i32 = 500;
+    pub const W: i32 = 1000;
+    pub const H: i32 = 650;
+}
+
+pub mod font {
+    pub const SMALL: u32 = 10;
 }
 
 pub mod game_defaults {
