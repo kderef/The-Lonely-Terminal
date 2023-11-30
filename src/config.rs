@@ -4,23 +4,6 @@ pub mod win {
     pub const H: i32 = 800;
 }
 
-pub mod font {
-    const SEP: char = std::path::MAIN_SEPARATOR;
-
-    use raylib::prelude::*;
-
-    type FontResult = Result<Font, String>;
-    type RH = RaylibHandle;
-    type RT = RaylibThread;
-
-    pub fn firacode(rl: &mut RH, th: &RT) -> FontResult {
-        rl.load_font(&th, &format!(".{SEP}font{SEP}FiraCodeNF.ttf"))
-    }
-    pub fn termplus(rl: &mut RH, th: &RT) -> FontResult {
-        rl.load_font(&th, &format!(".{SEP}font{SEP}TermPlusNF.ttf"))
-    }
-}
-
 pub mod game_defaults {
     use raylib::{camera::Camera3D, core::math::Vector3};
     use crate::vec3; // macro

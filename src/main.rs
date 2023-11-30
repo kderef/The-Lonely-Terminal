@@ -2,33 +2,15 @@
 //#![cfg_attr(all(target_os = "windows", not(debug_assertions)), windows_subsystem = "windows")]
 
 mod config;
+#[macro_use]
 mod rl_util;
 mod game;
+mod font;
 
-use std::process::exit;
-
-use config::{game_defaults, win, font};
+use config::{game_defaults, win};
 use raylib::prelude::*;
 use game::*;
-use rl_util::*;
-
-fn handle_keys(rl: &mut RaylibHandle, key: Option<KeyboardKey>, state: &mut GameState) {
-    if let Some(key) = key {
-        match key {
-            KeyboardKey::KEY_F11 => {
-                rl.toggle_fullscreen();
-            },
-            KeyboardKey::KEY_ESCAPE => {
-                *state = if *state == GameState::Paused {
-                    GameState::Running
-                } else {
-                    GameState::Paused
-                };
-            }
-            _ => {}
-        }
-    }
-}
+use font::FontConfig;
 
 fn main() {
     let (mut rl, thread) = raylib::init()
@@ -37,6 +19,7 @@ fn main() {
         .msaa_4x()
         .build();
 
+    // resize to fit monitor
     if cfg!(target_os = "windows") {
         let monitor = get_monitor_info( get_current_monitor() );
         if let Ok(monitor_info) = monitor {
@@ -46,32 +29,21 @@ fn main() {
     }
     rl.toggle_fullscreen();
 
-    // initialization
-    let mut camera = game_defaults::default_camera();
-    let cam_mode = CameraMode::CAMERA_FIRST_PERSON;
-
     rl.set_target_fps(game_defaults::TARGET_FPS);
     rl.set_exit_key(None);
     rl.set_mouse_scale(0.0, 0.0);
 
-    let ft_termplus = font::termplus(&mut rl, &thread).unwrap_or_else(|err| {
-        if let Err(_) = msgbox::create("ERROR", &err, msgbox::IconType::Error) {
-            eprintln!("ERROR: {err}");
-        }
-        exit(1);
-    });
-
-    let mut fonts = FontConfig {
-        title_screen: ft_termplus
-    };
-
-    
+    let mut fonts = FontConfig::load_all_or_fail(&mut rl, &thread);
     let mut game_state = GameState::TitleScreen;
 
     while !rl.window_should_close() {
         let key = rl.get_key_pressed();
 
-        handle_keys(&mut rl, key, &mut game_state);
-        game_state.run(&mut rl, &thread, &mut fonts);
+        game_state.handle_keys(&mut rl, key);
+        match game_state {
+            GameState::TitleScreen => title_screen(&mut rl, &thread, &mut fonts),
+            GameState::Running => game_run(&mut rl, &thread, &mut fonts),
+            GameState::Paused => pause_screen(&mut rl, &thread, &mut fonts)
+        }
     }
 }

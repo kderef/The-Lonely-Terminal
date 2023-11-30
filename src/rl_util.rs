@@ -1,4 +1,5 @@
 use raylib::prelude::*;
+use crate::font;
 
 // faster Vector3 initialization
 #[macro_export]
@@ -14,16 +15,14 @@ macro_rules! vec2 {
     }
 }
 
-pub struct FontConfig {
-    pub title_screen: Font,
+pub fn fail(err: impl Into<String>) -> ! {
+    let _ = msgbox::create("ERROR", &err.into(), msgbox::IconType::Error);
+    std::process::exit(1);
 }
 
-impl FontConfig {
-    pub fn font_size(&self, dr: &RaylibDrawHandle) -> f32 {
-        if dr.is_window_fullscreen() {
-            25.0
-        } else {
-            17.0
-        }
+#[macro_export]
+macro_rules! sound {
+    ($path:literal) => {
+        &format!(".{sep}audio{sep}{}", $path, sep = std::path::MAIN_SEPARATOR)
     }
 }
