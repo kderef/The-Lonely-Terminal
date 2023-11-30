@@ -13,3 +13,17 @@ macro_rules! vec2 {
         Vector2{x: $x, y: $y}
     }
 }
+
+pub struct FontConfig {
+    pub title_screen: Font,
+}
+
+impl FontConfig {
+    pub fn font_size(&self, dr: &RaylibDrawHandle) -> f32 {
+        if dr.is_window_fullscreen() {
+            25.0
+        } else {
+            17.0
+        }
+    }
+}

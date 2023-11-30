@@ -1,15 +1,24 @@
 pub mod win {
     pub const TITLE: &str = "The Lonely Terminal";
-    pub const W: i32 = 1920;
-    pub const H: i32 = 1080;
+    pub const W: i32 = 1280;
+    pub const H: i32 = 800;
 }
 
 pub mod font {
-    #[cfg(target_os = "windows")]
-    pub const FIRACODE: &str = ".\\font\\FiraCodeNerdFont-Regular.ttf";
+    const SEP: char = std::path::MAIN_SEPARATOR;
 
-    #[cfg(any(target_os = "linux", target_os = "macos"))]
-    pub const FIRACODE: &str = "./font/FiraCodeNerdFont-Regular.ttf";
+    use raylib::prelude::*;
+
+    type FontResult = Result<Font, String>;
+    type RH = RaylibHandle;
+    type RT = RaylibThread;
+
+    pub fn firacode(rl: &mut RH, th: &RT) -> FontResult {
+        rl.load_font(&th, &format!(".{SEP}font{SEP}FiraCodeNF.ttf"))
+    }
+    pub fn termplus(rl: &mut RH, th: &RT) -> FontResult {
+        rl.load_font(&th, &format!(".{SEP}font{SEP}TermPlusNF.ttf"))
+    }
 }
 
 pub mod game_defaults {

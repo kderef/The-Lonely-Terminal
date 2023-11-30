@@ -37,9 +37,12 @@ fn main() {
         .msaa_4x()
         .build();
 
-    let monitor = get_monitor_info( get_current_monitor() );
-    if let Ok(monitor_info) = monitor {
-        rl.set_window_size(monitor_info.width, monitor_info.height);
+    if cfg!(target_os = "windows") {
+        let monitor = get_monitor_info( get_current_monitor() );
+        if let Ok(monitor_info) = monitor {
+            println!("{monitor_info:?}");
+            rl.set_window_size(monitor_info.width, monitor_info.height);
+        }
     }
     rl.toggle_fullscreen();
 
@@ -47,17 +50,21 @@ fn main() {
     let mut camera = game_defaults::default_camera();
     let cam_mode = CameraMode::CAMERA_FIRST_PERSON;
 
-    println!("{:?}", rl.get_window_state());
     rl.set_target_fps(game_defaults::TARGET_FPS);
     rl.set_exit_key(None);
     rl.set_mouse_scale(0.0, 0.0);
 
-    let font = rl.load_font(&thread, font::FIRACODE).unwrap_or_else(|err| {
+    let ft_termplus = font::termplus(&mut rl, &thread).unwrap_or_else(|err| {
         if let Err(_) = msgbox::create("ERROR", &err, msgbox::IconType::Error) {
             eprintln!("ERROR: {err}");
         }
         exit(1);
     });
+
+    let mut fonts = FontConfig {
+        title_screen: ft_termplus
+    };
+
     
     let mut game_state = GameState::TitleScreen;
 
@@ -65,13 +72,6 @@ fn main() {
         let key = rl.get_key_pressed();
 
         handle_keys(&mut rl, key, &mut game_state);
-
-        let mut d = rl.begin_drawing(&thread);
-
-        match game_state {
-            GameState::TitleScreen => title_screen(&mut d, &mut game_state, &font),
-            GameState::Running => {},
-            GameState::Paused => {},
-        }
+        game_state.run(&mut rl, &thread, &mut fonts);
     }
 }
