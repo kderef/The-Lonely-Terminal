@@ -9,7 +9,7 @@ pub mod game_defaults {
     use crate::vec3; // macro
 
     pub const FOV: f32 = 75.0;
-    pub const TARGET_FPS: u32 = 120;
+    pub const TARGET_FPS: u32 = 240;
 
     pub fn default_camera() -> Camera3D {
         Camera3D::perspective(
