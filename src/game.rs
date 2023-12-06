@@ -1,106 +1,78 @@
-use crate::{font::FontConfig, rl_util::fail, vec2};
 use raylib::prelude::*;
-use std::collections::HashMap;
 
-#[derive(PartialEq, Debug)]
-pub enum GameState {
-    TitleScreen,
-    MainMenu,
-    Paused,
-    Running,
+pub const WINDOW_SIZE: (i32, i32) = (960, 840);
+pub const WINDOW_TITLE: &str = "Hello World!";
+
+#[derive(Debug)]
+pub struct Fonts {
+    pub martian: Font,
+    pub termplus: Font,
 }
 
-pub struct Game<'a> {
-    pub rl: &'a mut RaylibHandle,
-    th: &'a RaylibThread,
-    fonts: &'a FontConfig,
-    state: GameState,
-    rl_audio: RaylibAudio,
-    startup_beep_played: bool,
-    sounds: HashMap<&'static str, Sound>
-}
-
-impl<'a> Game<'a> {
-    pub fn new(rl: &'a mut RaylibHandle, th: &'a RaylibThread, fonts: &'a FontConfig) -> Self {
+impl Fonts {
+    pub fn get() -> Self {
         Self {
-            rl,
-            th,
-            fonts,
-            state: GameState::TitleScreen,
-            rl_audio: RaylibAudio::init_audio_device(),
-            startup_beep_played: false,
-            sounds: HashMap::new()
+            martian: load_font!("../font/MartianMonoNF.ttf"),
+            termplus: load_font!("../font/TermPlusNF.ttf"),
         }
     }
+}
 
-    pub fn load_all_sounds_or_fail(&mut self) {
-        let beep = Sound::load_sound(sound!("T_retro_beep.wav")).map_err(fail).unwrap();
+#[derive(Debug)]
+pub struct Game {
+    // core
+    pub rl: RaylibHandle,
+    pub thread: RaylibThread,
+    // audio
+    pub rl_audio: RaylibAudio,
+    pub fonts: Fonts,
+}
 
-        self.sounds.insert("retro_beep", beep);
-    }
+impl Game {
+    // construct from existing
+    pub fn new() -> Self {
+        // set config flags
+        unsafe {
+            raylib::ffi::SetConfigFlags(
+                ConfigFlags::FLAG_WINDOW_HIGHDPI as u32
+            );
+        }
 
-    pub fn is_running(&self) -> bool {
-        !self.rl.window_should_close()
-    }
+        let (mut rl, thread) = raylib::init()
+            .size(WINDOW_SIZE.0, WINDOW_SIZE.1)
+            .title(WINDOW_TITLE)
+            .build();
+        
+        rl.set_target_fps(
+            unsafe {
+                raylib::ffi::GetMonitorRefreshRate(
+                    raylib::ffi::GetCurrentMonitor()
+                )
+            } as u32
+        );
 
-    pub fn get_key(&mut self) -> Option<KeyboardKey> {
-        self.rl.get_key_pressed()
-    }
-    pub fn handle_key(&mut self, key: Option<KeyboardKey>) {
-        if let Some(key) = key {
-            match key {
-                KeyboardKey::KEY_F11 => {
-                    self.rl.toggle_fullscreen();
-                },
-                KeyboardKey::KEY_ESCAPE => {
-                    self.state = if self.state == GameState::Paused {
-                        GameState::Running
-                    } else {
-                        GameState::Paused
-                    };
-                }
-                _ => {}
-            }
+        rl.set_exit_key(None);
+
+        let rl_audio = RaylibAudio::init_audio_device();
+        let fonts = Fonts::get();
+
+        Self {
+            rl,
+            thread,
+            rl_audio,
+            fonts,
         }
     }
     pub fn fps(&self) -> u32 {
         self.rl.get_fps()
     }
-
-    // game states
-
-    /// `GameState::TitleScreen`
-    pub fn show_title_screen(&mut self) {
-        if !self.startup_beep_played {
-            self.rl_audio.play_sound(&self.sounds.get("retro_beep").unwrap());
-            self.startup_beep_played = true;
+    pub fn run(
+        &mut self,
+        event_handler: fn(&mut Self, Option<KeyboardKey>),
+    ) {
+        while !self.rl.window_should_close() {
+            let key = self.rl.get_key_pressed();
+            event_handler(self, key);
         }
-
-        let mut spacing = 0;
-        let mut dr = self.rl.begin_drawing(self.th);
-
-        let echo = |dr: &mut RaylibDrawHandle, msg: &str| {
-            dr.draw_text_ex(
-                &self.fonts.termplus,
-                msg,
-                vec2![0.0, 0.0],
-                self.fonts.font_size(&dr),
-                1.0,
-                Color::WHITE,
-            );
-        };
-
-        dr.clear_background(Color::BLACK);
-
-        // 1. F11 help
-        echo(&mut dr, "Hello World!");
-
-        // 2. Logo text
     }
-    /// `GameState::MainMenu`
-    pub fn show_main_menu(&mut self) {}
-    /// `GameState::Running`
-    pub fn show_running(&mut self) {}
-    /// `GameState::Paused`
-    pub fn show_pause_screen(&mut self) {}
 }

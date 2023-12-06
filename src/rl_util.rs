@@ -1,5 +1,4 @@
 use raylib::prelude::*;
-use crate::font;
 
 // faster Vector3 initialization
 #[macro_export]
@@ -15,25 +14,22 @@ macro_rules! vec2 {
     }
 }
 
-pub fn fail(err: impl Into<String>) -> ! {
-    let _ = msgbox::create("ERROR", &err.into(), msgbox::IconType::Error);
-    std::process::exit(1);
-}
-
 #[macro_export]
-macro_rules! sound {
-    ($path:literal) => {
-        &format!(".{sep}audio{sep}{}", $path, sep = std::path::MAIN_SEPARATOR)
-    }
-}
+macro_rules! load_font {
+    ($name:literal) => {
+        unsafe {
+            let bytes = include_bytes!($name);
+            let bytes_len = bytes.len() as i32;
 
-#[macro_export]
-macro_rules! rl_sleep {
-    // TODO
-    ($secs:literal, $dr:ident) => {
-        for _ in 0..($secs * 100) {
-            std::thread::sleep(std::time::Duration::from_nanos(100));
-            $dr.update()
+            let raw = raylib::ffi::LoadFontFromMemory(
+                ".ttf".as_ptr() as *const i8,
+                bytes.as_ptr(),
+                bytes_len,
+                100,
+                std::ptr::null_mut(),
+                0
+            );
+            Font::from_raw(raw)
         }
     }
 }
