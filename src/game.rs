@@ -1,7 +1,12 @@
 use raylib::prelude::*;
 
+use crate::rl_port;
+
 pub const WINDOW_SIZE: (i32, i32) = (960, 840);
 pub const WINDOW_TITLE: &str = "Hello World!";
+pub const WINDOW_FLAGS: u32 =
+    ConfigFlags::FLAG_WINDOW_RESIZABLE as u32 |
+    ConfigFlags::FLAG_WINDOW_HIGHDPI as u32;
 
 #[derive(Debug)]
 pub struct Fonts {
@@ -32,11 +37,7 @@ impl Game {
     // construct from existing
     pub fn new() -> Self {
         // set config flags
-        unsafe {
-            raylib::ffi::SetConfigFlags(
-                ConfigFlags::FLAG_WINDOW_HIGHDPI as u32
-            );
-        }
+        rl_port::set_config_flags(WINDOW_FLAGS);
 
         let (mut rl, thread) = raylib::init()
             .size(WINDOW_SIZE.0, WINDOW_SIZE.1)
@@ -44,11 +45,9 @@ impl Game {
             .build();
         
         rl.set_target_fps(
-            unsafe {
-                raylib::ffi::GetMonitorRefreshRate(
-                    raylib::ffi::GetCurrentMonitor()
-                )
-            } as u32
+            rl_port::get_monitor_refresh_rate(
+                rl_port::get_current_monitor()
+            ) as u32
         );
 
         rl.set_exit_key(None);
