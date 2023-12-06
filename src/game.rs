@@ -5,8 +5,7 @@ use crate::rl_port;
 pub const WINDOW_SIZE: (i32, i32) = (960, 840);
 pub const WINDOW_TITLE: &str = "Hello World!";
 pub const WINDOW_FLAGS: u32 =
-    ConfigFlags::FLAG_WINDOW_RESIZABLE as u32 |
-    ConfigFlags::FLAG_WINDOW_HIGHDPI as u32;
+    ConfigFlags::FLAG_WINDOW_RESIZABLE as u32 | ConfigFlags::FLAG_WINDOW_HIGHDPI as u32;
 
 #[derive(Debug)]
 pub struct Fonts {
@@ -43,12 +42,8 @@ impl Game {
             .size(WINDOW_SIZE.0, WINDOW_SIZE.1)
             .title(WINDOW_TITLE)
             .build();
-        
-        rl.set_target_fps(
-            rl_port::get_monitor_refresh_rate(
-                rl_port::get_current_monitor()
-            ) as u32
-        );
+
+        rl.set_target_fps(rl_port::get_current_monitor_refresh_rate() as u32);
 
         rl.set_exit_key(None);
 
@@ -65,10 +60,7 @@ impl Game {
     pub fn fps(&self) -> u32 {
         self.rl.get_fps()
     }
-    pub fn run(
-        &mut self,
-        event_handler: fn(&mut Self, Option<KeyboardKey>),
-    ) {
+    pub fn run(&mut self, event_handler: fn(&mut Self, Option<KeyboardKey>)) {
         while !self.rl.window_should_close() {
             let key = self.rl.get_key_pressed();
             event_handler(self, key);
