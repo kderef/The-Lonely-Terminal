@@ -33,7 +33,7 @@ pub struct Game {
 }
 
 impl Game {
-    // construct from existing
+    /// create a new raylib thread and handle
     pub fn new() -> Self {
         // set config flags
         rl_port::set_config_flags(WINDOW_FLAGS);
@@ -57,9 +57,7 @@ impl Game {
             fonts,
         }
     }
-    pub fn fps(&self) -> u32 {
-        self.rl.get_fps()
-    }
+    /// the main window loop, calls `event` each frame with the game state.
     pub fn run(&mut self, event_handler: fn(&mut Self, Option<KeyboardKey>)) {
         while !self.rl.window_should_close() {
             let key = self.rl.get_key_pressed();
