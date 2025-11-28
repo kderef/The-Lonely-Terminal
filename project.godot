@@ -10,11 +10,14 @@ config_version=5
 
 [application]
 
-config/name="terminal"
-run/main_scene="uid://btutno0yyv8da"
-config/features=PackedStringArray("4.5", "C#", "Forward Plus")
+config/name="The-Lonely-Terminal"
+config/features=PackedStringArray("4.5", "Forward Plus")
 config/icon="res://icon.svg"
 
 [dotnet]
 
-project/assembly_name="terminal"
+project/assembly_name="The-Lonely-Terminal"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/godot-vim/plugin.cfg")
