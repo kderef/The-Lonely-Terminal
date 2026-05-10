@@ -1,7 +1,7 @@
 use raylib::{
     ffi::{
-        self, GetShaderLocation, SetShaderValue, UnloadShader, UnloadTexture,
-        rlDisableBackfaceCulling, rlDisableDepthMask, rlEnableBackfaceCulling, rlEnableDepthMask,
+        self, UnloadShader, UnloadTexture, rlDisableBackfaceCulling, rlDisableDepthMask,
+        rlEnableBackfaceCulling, rlEnableDepthMask,
     },
     prelude::*,
 };
@@ -15,51 +15,46 @@ impl Skybox {
         let cube = unsafe { Mesh::gen_mesh_cube(thr, 1.0, 1.0, 1.0).make_weak() };
         let mut model = rl.load_model_from_mesh(thr, cube).unwrap();
 
-        // Assign skybox shader directly to model material (mirrors C example)
+        // Load skybox shader into model material slot via raw FFI
         model.materials_mut()[0].shader = unsafe {
             rl.load_shader(thr, Some("shader/skybox.vs"), Some("shader/skybox.fs"))
                 .unwrap()
         };
 
-        // Set uniforms through the material's shader reference
+        // Set uniforms via raw FFI
         unsafe {
-            let mut shader = Shader::from_raw(model.materials()[0].shader);
+            let shader = model.materials()[0].shader;
+            let cubemap_slot = MaterialMapIndex::MATERIAL_MAP_CUBEMAP as i32;
+            let zero = 0i32;
+            let uniform_int = ShaderUniformDataType::SHADER_UNIFORM_INT as i32;
 
-            let shader_loc = |s: &str| GetShaderLocation(*shader, s.as_ptr() as *const i8);
-
-            let env_map_loc = shader.get_shader_location("environmentMap");
-            let do_gamma_loc = shader.get_shader_location("doGamma");
-            let vflipped_loc = shader.get_shader_location("vflipped");
-
-            shader.set_shader_value(
-                env_map_loc,
-                &[MaterialMapIndex::MATERIAL_MAP_CUBEMAP as i32][..],
+            ffi::SetShaderValue(
+                shader,
+                ffi::GetShaderLocation(shader, b"environmentMap\0".as_ptr() as *const i8),
+                &cubemap_slot as *const i32 as *const _,
+                uniform_int,
             );
-            shader.set_shader_value(do_gamma_loc, &[1i32][..]);
-            shader.set_shader_value(vflipped_loc, &[0i32][..]);
-
-            // IMPORTANT: prevents UnloadShader call
-            std::mem::forget(shader);
+            ffi::SetShaderValue(
+                shader,
+                ffi::GetShaderLocation(shader, b"doGamma\0".as_ptr() as *const i8),
+                &zero as *const i32 as *const _,
+                uniform_int,
+            );
+            ffi::SetShaderValue(
+                shader,
+                ffi::GetShaderLocation(shader, b"vflipped\0".as_ptr() as *const i8),
+                &zero as *const i32 as *const _,
+                uniform_int,
+            );
         }
 
-        // Cubemap conversion shader
-        let mut cubemap_shader =
-            rl.load_shader(thr, Some("shader/cubemap.vs"), Some("shader/cubemap.fs"));
-        cubemap_shader.set_shader_value(
-            cubemap_shader.get_shader_location("equirectangularMap"),
-            &[0i32][..],
-        );
-
-        // Load panorama as regular texture then convert to cubemap
-        let panorama = rl.load_texture_from_image(thr, image).unwrap();
-        let cubemap = unsafe { gen_texture_cubemap(&cubemap_shader, &panorama, 1024) };
-
-        // cubemap_shader and panorama no longer needed, drop explicitly
-        drop(cubemap_shader);
-        drop(panorama);
+        // Load cubemap directly from image using auto-detect layout
+        let cubemap = rl
+            .load_texture_cubemap(&thr, &image, CubemapLayout::CUBEMAP_LAYOUT_AUTO_DETECT)
+            .unwrap();
 
         model.materials_mut()[0].maps_mut()[MaterialMapIndex::MATERIAL_MAP_CUBEMAP as usize]
-            .texture = cubemap;
+            .texture = *cubemap;
 
         Self { model }
     }
@@ -79,8 +74,6 @@ impl Skybox {
 
 impl Drop for Skybox {
     fn drop(&mut self) {
-        // Only manually unload the cubemap texture; the model owns the shader
-        // and will unload it via its own destructor
         unsafe {
             UnloadShader(self.model.materials_mut()[0].shader);
             UnloadTexture(
@@ -90,120 +83,4 @@ impl Drop for Skybox {
             );
         }
     }
-}
-
-#[allow(unsafe_op_in_unsafe_fn)]
-unsafe fn gen_texture_cubemap(
-    shader: &Shader,
-    panorama: &Texture2D,
-    size: i32,
-) -> ffi::TextureCubemap {
-    use raylib::ffi::*;
-    use rlFramebufferAttachTextureType::*;
-    use rlFramebufferAttachType::*;
-    use std::ptr;
-
-    let mut cubemap: TextureCubemap = std::mem::zeroed();
-
-    rlDisableBackfaceCulling();
-
-    // STEP 1: Setup framebuffer
-    let rbo = rlLoadTextureDepth(size, size, true);
-    cubemap.id = rlLoadTextureCubemap(
-        ptr::null(),
-        size,
-        PixelFormat::PIXELFORMAT_UNCOMPRESSED_R8G8B8A8 as i32,
-        1,
-    );
-
-    let fbo = rlLoadFramebuffer();
-    rlFramebufferAttach(
-        fbo,
-        rbo,
-        RL_ATTACHMENT_DEPTH as i32,
-        RL_ATTACHMENT_RENDERBUFFER as i32,
-        0,
-    );
-    rlFramebufferAttach(
-        fbo,
-        cubemap.id,
-        RL_ATTACHMENT_COLOR_CHANNEL0 as i32,
-        RL_ATTACHMENT_CUBEMAP_POSITIVE_X as i32,
-        0,
-    );
-
-    if rlFramebufferComplete(fbo) {
-        TraceLog(
-            TraceLogLevel::LOG_INFO as i32,
-            "FBO: [ID %u] Framebuffer object created successfully\0".as_ptr() as *const i8,
-            fbo,
-        );
-    }
-
-    // STEP 2: Draw to framebuffer
-    rlEnableShader(shader.id);
-
-    let mat_projection = Matrix::perspective(
-        90.0 * DEG2RAD as f32,
-        1.0,
-        rlGetCullDistanceNear() as f32,
-        rlGetCullDistanceFar() as f32,
-    );
-    rlSetUniformMatrix(
-        shader.locs()[ShaderLocationIndex::SHADER_LOC_MATRIX_PROJECTION as usize],
-        mat_projection.into(),
-    );
-
-    type Matrix = raylib::math::Matrix;
-    type Vector3 = raylib::math::Vector3;
-
-    const fn vec3(x: f32, y: f32, z: f32) -> Vector3 {
-        Vector3 { x, y, z }
-    }
-
-    let fbo_views = [
-        Matrix::look_at(vec3(0., 0., 0.), vec3(1., 0., 0.), vec3(0., -1., 0.)),
-        Matrix::look_at(vec3(0., 0., 0.), vec3(-1., 0., 0.), vec3(0., -1., 0.)),
-        Matrix::look_at(vec3(0., 0., 0.), vec3(0., 1., 0.), vec3(0., 0., 1.)),
-        Matrix::look_at(vec3(0., 0., 0.), vec3(0., -1., 0.), vec3(0., 0., -1.)),
-        Matrix::look_at(vec3(0., 0., 0.), vec3(0., 0., 1.), vec3(0., -1., 0.)),
-        Matrix::look_at(vec3(0., 0., 0.), vec3(0., 0., -1.), vec3(0., -1., 0.)),
-    ];
-
-    rlViewport(0, 0, size, size);
-    rlActiveTextureSlot(0);
-    rlEnableTexture(panorama.id);
-
-    for i in 0..6usize {
-        rlSetUniformMatrix(
-            shader.locs()[ShaderLocationIndex::SHADER_LOC_MATRIX_VIEW as usize],
-            fbo_views[i].into(),
-        );
-        rlFramebufferAttach(
-            fbo,
-            cubemap.id,
-            RL_ATTACHMENT_COLOR_CHANNEL0 as i32,
-            RL_ATTACHMENT_CUBEMAP_POSITIVE_X as i32 + i as i32,
-            0,
-        );
-        rlEnableFramebuffer(fbo);
-        rlClearScreenBuffers();
-        rlLoadDrawCube();
-    }
-
-    // STEP 3: Cleanup
-    rlDisableShader();
-    rlDisableTexture();
-    rlDisableFramebuffer();
-    rlUnloadFramebuffer(fbo);
-
-    rlViewport(0, 0, rlGetFramebufferWidth(), rlGetFramebufferHeight());
-    rlEnableBackfaceCulling();
-
-    cubemap.width = size;
-    cubemap.height = size;
-    cubemap.mipmaps = 1;
-    cubemap.format = PixelFormat::PIXELFORMAT_UNCOMPRESSED_R8G8B8A8 as i32;
-
-    cubemap
 }
