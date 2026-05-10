@@ -1,7 +1,7 @@
 use raylib::{
     ffi::{
-        self, UnloadShader, UnloadTexture, rlDisableBackfaceCulling, rlDisableDepthMask,
-        rlEnableBackfaceCulling, rlEnableDepthMask,
+        self, GetShaderLocation, SetShaderValue, UnloadShader, UnloadTexture,
+        rlDisableBackfaceCulling, rlDisableDepthMask, rlEnableBackfaceCulling, rlEnableDepthMask,
     },
     prelude::*,
 };
@@ -15,33 +15,49 @@ impl Skybox {
         let cube = unsafe { Mesh::gen_mesh_cube(thr, 1.0, 1.0, 1.0).make_weak() };
         let mut model = rl.load_model_from_mesh(thr, cube).unwrap();
 
-        // Skybox shader
-        let mut skybox_shader =
-            rl.load_shader(thr, Some("shader/skybox.vs"), Some("shader/skybox.fs"));
-        skybox_shader.set_shader_value(
-            skybox_shader.get_shader_location("environmentMap"),
-            &[MaterialMapIndex::MATERIAL_MAP_CUBEMAP as i32][..],
-        );
-        skybox_shader.set_shader_value(skybox_shader.get_shader_location("doGamma"), &[1][..]);
-        skybox_shader.set_shader_value(skybox_shader.get_shader_location("vflipped"), &[0][..]);
+        // Assign skybox shader directly to model material (mirrors C example)
+        model.materials_mut()[0].shader = unsafe {
+            rl.load_shader(thr, Some("shader/skybox.vs"), Some("shader/skybox.fs"))
+                .unwrap()
+        };
+
+        // Set uniforms through the material's shader reference
+        unsafe {
+            let mut shader = Shader::from_raw(model.materials()[0].shader);
+
+            let shader_loc = |s: &str| GetShaderLocation(*shader, s.as_ptr() as *const i8);
+
+            let env_map_loc = shader.get_shader_location("environmentMap");
+            let do_gamma_loc = shader.get_shader_location("doGamma");
+            let vflipped_loc = shader.get_shader_location("vflipped");
+
+            shader.set_shader_value(
+                env_map_loc,
+                &[MaterialMapIndex::MATERIAL_MAP_CUBEMAP as i32][..],
+            );
+            shader.set_shader_value(do_gamma_loc, &[1i32][..]);
+            shader.set_shader_value(vflipped_loc, &[0i32][..]);
+
+            // IMPORTANT: prevents UnloadShader call
+            std::mem::forget(shader);
+        }
 
         // Cubemap conversion shader
         let mut cubemap_shader =
             rl.load_shader(thr, Some("shader/cubemap.vs"), Some("shader/cubemap.fs"));
         cubemap_shader.set_shader_value(
             cubemap_shader.get_shader_location("equirectangularMap"),
-            &[0][..],
+            &[0i32][..],
         );
 
         // Load panorama as regular texture then convert to cubemap
         let panorama = rl.load_texture_from_image(thr, image).unwrap();
         let cubemap = unsafe { gen_texture_cubemap(&cubemap_shader, &panorama, 1024) };
 
-        // cubemap_shader no longer needed
+        // cubemap_shader and panorama no longer needed, drop explicitly
         drop(cubemap_shader);
+        drop(panorama);
 
-        let skybox_shader = unsafe { skybox_shader.unwrap() };
-        model.materials_mut()[0].shader = skybox_shader;
         model.materials_mut()[0].maps_mut()[MaterialMapIndex::MATERIAL_MAP_CUBEMAP as usize]
             .texture = cubemap;
 
@@ -63,6 +79,8 @@ impl Skybox {
 
 impl Drop for Skybox {
     fn drop(&mut self) {
+        // Only manually unload the cubemap texture; the model owns the shader
+        // and will unload it via its own destructor
         unsafe {
             UnloadShader(self.model.materials_mut()[0].shader);
             UnloadTexture(
@@ -85,7 +103,7 @@ unsafe fn gen_texture_cubemap(
     use rlFramebufferAttachType::*;
     use std::ptr;
 
-    let mut cubemap: TextureCubemap = unsafe { std::mem::zeroed() };
+    let mut cubemap: TextureCubemap = std::mem::zeroed();
 
     rlDisableBackfaceCulling();
 
@@ -156,7 +174,7 @@ unsafe fn gen_texture_cubemap(
     rlActiveTextureSlot(0);
     rlEnableTexture(panorama.id);
 
-    for i in 0..6 {
+    for i in 0..6usize {
         rlSetUniformMatrix(
             shader.locs()[ShaderLocationIndex::SHADER_LOC_MATRIX_VIEW as usize],
             fbo_views[i].into(),

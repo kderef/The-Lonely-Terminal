@@ -32,7 +32,7 @@ fn main() {
     let mut grabbed = false;
 
     // skybox
-    let image = Image::load_image("textures/sky06.png").unwrap();
+    let image = Image::load_image("textures/sky06_cube.png").unwrap();
     let skybox = Skybox::new(&mut rl, &thr, &image);
     drop(image);
 
