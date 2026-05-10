@@ -32,7 +32,7 @@ fn main() {
     let mut grabbed = false;
 
     // skybox
-    let image = Image::load_image("textures/skybox_sky.png").unwrap();
+    let image = Image::load_image("textures/sky06.png").unwrap();
     let skybox = Skybox::new(&mut rl, &thr, &image);
     drop(image);
 
@@ -59,4 +59,5 @@ fn main() {
 
         d.draw_fps(0, 0);
     }
+    println!("EXITING GAME LOOP");
 }
