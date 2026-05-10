@@ -5,8 +5,8 @@
 int main(void) {
     const GameConfig conf = {
             .window_title = "Hello",
-            .screen_w = 1280,
-            .screen_h= 720,
+            .screen_w = 1920,
+            .screen_h = 1080,
             .target_fps = 170,
             .window_resizable = false,
             .vsync = false,

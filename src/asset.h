@@ -3,7 +3,7 @@
 #include "raylib.h"
 
 #define ASSETS \
-    X(SKY1, ASSET_TEXTURE, "textures/skybox_test1.png")
+    X(SKY1, TEXTURE, "textures/skybox_test1.png")
 
 
 #define X(NAME, ...) AID_##NAME,
@@ -21,7 +21,7 @@ typedef enum {
     ASSET_TEXTURE,
 } AssetType;
 
-#define X(NAME, TYPE, PATH) [AID_##NAME] = {PATH, TYPE},
+#define X(NAME, TYPE, PATH) [AID_##NAME] = {PATH, ASSET_##TYPE},
 static const struct {const char* path; AssetType type; } ASSET_INFO[AID_MAX] = {
     [AID_NONE] = {"NONE", 0},
     ASSETS

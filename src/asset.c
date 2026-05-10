@@ -5,7 +5,6 @@
 
 #define AID_INVALID(AID) ((AID) <= AID_NONE || (AID) >= AID_MAX)
 
-
 Asset g_assets[AID_MAX] = {0};
 
 const char* asset_path(AssetID id) {
