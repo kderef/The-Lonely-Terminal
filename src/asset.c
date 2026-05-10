@@ -5,10 +5,6 @@
 
 #define AID_INVALID(AID) ((AID) <= AID_NONE || (AID) >= AID_MAX)
 
-static const struct {const char* path; AssetType type; } ASSET_INFO[AID_MAX] = {
-    [AID_NONE] = {"", 0},
-    [AID_SKY1] = {"textures/skybox_test1.png", ASSET_TEXTURE},
-};
 
 Asset g_assets[AID_MAX] = {0};
 
