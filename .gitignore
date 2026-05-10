@@ -1,0 +1,10 @@
+/bin/*
+log*.txt
+.DS_Store
+
+# build process
+*.o
+*.a
+
+# logging
+log.txt*
