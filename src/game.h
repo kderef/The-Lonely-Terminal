@@ -7,15 +7,22 @@
 #include "skybox.h"
 #include "menu.h"
 #include "player.h"
-#include "video.h"
-#include "audio.h"
 
 /******************************************************************************/
 // game
 
 
 typedef struct {
-    VideoConfig video_conf;
+    const char* window_title;
+    int screen_w;
+    int screen_h;
+
+    int target_fps;
+
+    bool vsync;
+    bool msaa_4x;
+    bool fullscreen;
+    bool window_resizable;
 } GameConfig;
 
 typedef struct {
@@ -23,8 +30,6 @@ typedef struct {
     bool running;
     bool debug;
 
-    // systems
-    Audio audio;
 
     // UI
     PauseMenu pause_menu;

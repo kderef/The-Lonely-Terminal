@@ -4,15 +4,13 @@
 
 int main(void) {
     const GameConfig conf = {
-        .video_conf = {
-            .title = "Hello",
-            .width = 1280,
-            .height = 720,
+            .window_title = "Hello",
+            .screen_w = 1280,
+            .screen_h= 720,
             .target_fps = 170,
-            .resizable = true,
+            .window_resizable = false,
             .vsync = false,
             .msaa_4x = true,
-        },
     };
         
     Game g = game_init(conf);

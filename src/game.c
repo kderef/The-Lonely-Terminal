@@ -3,7 +3,6 @@
 #include "menu.h"
 #include "player_camera.h"
 #include "asset.h"
-#include "video.h"
 
 #include <time.h>
 #include <raylib.h>
@@ -15,18 +14,31 @@ Game game_init(GameConfig conf) {
         .debug =true,
         .pause_menu = pause_menu_new(),
         .player = player_new(),
-        .audio = audio_new(),
     };
     
     return g;
 }
 
 void game_open(Game* g) {
-    // Video init
-    video_init(g->config.video_conf);
+    const GameConfig c = g->config;
+
+    unsigned int flags = 0;
+
+    if (c.fullscreen) flags |= FLAG_FULLSCREEN_MODE;
+    if (c.msaa_4x) flags |= FLAG_MSAA_4X_HINT;
+    if (c.vsync) flags |= FLAG_VSYNC_HINT;
+    if (c.window_resizable) flags |= FLAG_WINDOW_RESIZABLE;
+
+    SetConfigFlags(flags);
+
+    // Open the window
+    InitWindow(c.screen_w, c.screen_h, c.window_title);
+
+    SetExitKey(0);
+    SetTargetFPS(c.target_fps);
 
     // Audio init
-    audio_init(&g->audio);
+    // audio_init(&g->audio)
 
 
     SetRandomSeed(time(0));
@@ -47,9 +59,7 @@ void game_close(Game* g) {
     skybox_unload(&g->skybox);
 
     player_camera_set_grab(&g->player.camera, false);
-        
-    audio_close(&g->audio);
-    video_close();
+       
 }
 
 void game_update(Game* g) {
@@ -63,7 +73,7 @@ void game_update(Game* g) {
     }
 
     if (IsKeyPressed(KEY_F11)) {
-        video_toggle_fullscreen();
+        ToggleFullscreen();
     }
     if (IsKeyPressed(KEY_F1)) {
         g->debug = !g->debug;
@@ -98,8 +108,24 @@ void game_draw(Game* g) {
 
     pause_menu_draw(&g->pause_menu);
 
-    if (g->debug)
-        video_draw_debug();
+    if (g->debug) {
+        const Color COLOR = YELLOW;
+        const int font_size = 30;
+        int x = 5;
+        int y = -font_size + 5;
+
+        const char* text;
+
+        #define DEBUG_LINE(...) DrawText((text = TextFormat(__VA_ARGS__)), x, y += font_size, font_size, COLOR)
+
+        DEBUG_LINE("FPS: %d", GetFPS());
+        DEBUG_LINE("resolution: %dx%d", GetScreenWidth(), GetScreenWidth());
+        DEBUG_LINE("fullscreen: %d", IsWindowFullscreen());
+        DEBUG_LINE("MSAA 4x: %d", IsWindowState(FLAG_MSAA_4X_HINT));
+        DEBUG_LINE("vsync: %d", IsWindowState(FLAG_VSYNC_HINT));
+
+        #undef DEBUG_LINE
+    }
 
     EndDrawing();
 }
