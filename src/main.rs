@@ -3,6 +3,7 @@
     windows_subsystem = "windows"
 )]
 
+mod mesh_ex;
 mod player_camera;
 
 use macroquad::{
@@ -46,6 +47,10 @@ fn draw_skybox() {
 async fn main() {
     let mut camera = PlayerCamera::new(vec3(1., 10., 1.));
 
+    let skybox_texture = load_texture("textures/skybox_sky.png").await.unwrap();
+    let mut cube = mesh_ex::gen_cube(1.0, 1.0, 1.0);
+    cube.texture = Some(skybox_texture);
+
     loop {
         if is_key_pressed(KeyCode::Escape) {
             camera.toggle_grab();
@@ -65,6 +70,7 @@ async fn main() {
         {
             draw_grid(100, 10.0, WHITE, GRAY);
             draw_cube(vec3(0., 1., -5.), vec3(2., 2., 2.), None, RED); // big red cube ahead
+            draw_mesh(&cube);
         }
         set_default_camera();
 
