@@ -9,8 +9,6 @@ O_GAME = bin/game.o
 O_SKBX = bin/skybox.o
 O_PLCM = bin/player_camera.o
 O_MENU = bin/menu.o
-O_VDEO = bin/video.o
-O_AUDI = bin/audio.o
 O_ASST = bin/asset.o
 O_PLYR = bin/player.o
 
@@ -28,8 +26,8 @@ endif
 
 FLAGS = $(CFLAGS) $(OSFLAGS)
 
-$(BIN): $(LIBRAYLIB) $(O_GAME) $(O_SKBX) $(O_PLCM) $(O_MENU) $(O_VDEO) $(O_AUDI) $(O_ASST) $(O_PLYR) src/main.c 
-	$(CC) src/main.c $(O_GAME) $(O_SKBX) $(O_PLCM) $(O_MENU) $(O_VDEO) $(O_AUDI) $(O_ASST) $(O_PLYR) $(LIBRAYLIB) -o $(BIN) $(FLAGS)
+$(BIN): $(LIBRAYLIB) $(O_GAME) $(O_SKBX) $(O_PLCM) $(O_MENU) $(O_ASST) $(O_PLYR) src/main.c 
+	$(CC) src/main.c $(O_GAME) $(O_SKBX) $(O_PLCM) $(O_MENU) $(O_ASST) $(O_PLYR) $(LIBRAYLIB) -o $(BIN) $(FLAGS)
 
 $(O_SKBX): src/skybox.*
 	$(CC) $(CFLAGS) -c src/skybox.c -o $(O_SKBX)
@@ -42,12 +40,6 @@ $(O_PLCM): src/player_camera.*
 
 $(O_MENU): src/menu.*
 	$(CC) $(CFLAGS) -c src/menu.c -o $(O_MENU)
-
-$(O_VDEO): src/video.*
-	$(CC) $(CFLAGS) -c src/video.c -o $(O_VDEO)
-
-$(O_AUDI): src/audio.*
-	$(CC) $(CFLAGS) -c src/audio.c -o $(O_AUDI)
 
 $(O_ASST): src/asset.*
 	$(CC) $(CFLAGS) -c src/asset.c -o $(O_ASST)
