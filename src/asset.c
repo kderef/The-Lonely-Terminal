@@ -1,5 +1,9 @@
+#include <stdlib.h>
+
 #include "asset.h"
 #include "raylib.h"
+
+#define AID_INVALID(AID) ((AID) <= AID_NONE || (AID) >= AID_MAX)
 
 static const struct {const char* path; AssetType type; } ASSET_INFO[AID_MAX] = {
     [AID_NONE] = {"", 0},
@@ -9,8 +13,15 @@ static const struct {const char* path; AssetType type; } ASSET_INFO[AID_MAX] = {
 Asset g_assets[AID_MAX] = {0};
 
 const char* asset_path(AssetID id) {
-    if (id <= AID_NONE || id >= AID_MAX) return 0;
+    if (AID_INVALID(id)) return NULL;
     return ASSET_INFO[id].path;
+}
+
+Asset* asset_get(AssetID id) {
+    if (AID_INVALID(id)) return NULL;
+    if (!g_assets[id].loaded) return NULL;
+
+    return &g_assets[id];
 }
 
 Asset* asset_load(AssetID id) {
@@ -38,6 +49,7 @@ Asset* asset_load(AssetID id) {
 
 void asset_unload(AssetID id) {
     if (!g_assets[id].loaded) return;
+    if (id <= 0 || id > AID_MAX) return;
 
     Asset* a = &g_assets[id];
     
