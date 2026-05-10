@@ -16,8 +16,9 @@ lto = true
 strip = true
 codegen-units = 1
 
-[dependencies]
-macroquad = { version = "0.4.14", features = ["audio"] }
+[dependencies.raylib]
+version = "5.5.1"
+features = ["noscreenshot"]
 
 [build-dependencies]
 static_vcruntime = "3.0.0"

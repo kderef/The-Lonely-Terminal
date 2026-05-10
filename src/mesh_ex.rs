@@ -6,8 +6,6 @@ use macroquad::ui::Vertex;
 /// https://github.com/raysan5/raylib/blob/master/src/rmodels.c#L2772
 #[rustfmt::skip]
 pub fn gen_cube(width: f32, height: f32, length: f32) -> Mesh {
-
-
     static TEXCOORDS: [f32; 48] = [
         0.0, 0.0,
         1.0, 0.0,

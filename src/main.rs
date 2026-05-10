@@ -3,78 +3,50 @@
     windows_subsystem = "windows"
 )]
 
-mod mesh_ex;
 mod player_camera;
 
-use macroquad::{
-    miniquad::{
-        conf::Platform,
-        gl::{GL_CULL_FACE, glDepthMask, glDisable, glEnable},
-    },
-    prelude::*,
-};
+use player_camera::update_camera;
 
-use crate::player_camera::PlayerCamera;
+use raylib::prelude::*;
 
-fn conf() -> Conf {
-    Conf {
-        window_title: "The Lonely Terminal".to_string(),
-        window_width: 1920,
-        window_height: 1080,
-        window_resizable: false,
-        high_dpi: true,
-        fullscreen: false,
-        sample_count: 4,
-        icon: None,
-        platform: Platform::default(),
-    }
-}
+fn main() {
+    let (mut rl, thr) = raylib::init()
+        .size(1920, 1080)
+        .msaa_4x()
+        .title("The Lonely Terminal")
+        .build();
 
-fn draw_skybox() {
-    // temp disable backface culling & depth mask
-    unsafe {
-        glDisable(GL_CULL_FACE);
-        glDepthMask(0);
-    }
+    rl.set_exit_key(None);
+    rl.set_target_fps(200);
 
-    unsafe {
-        glEnable(GL_CULL_FACE);
-        glDepthMask(1);
-    }
-}
+    let mut camera = Camera3D::perspective(
+        Vector3::new(1.0, 1.0, 1.0),
+        Vector3::new(5.0, 0.0, 5.0),
+        Vector3::new(0., 1.0, 0.),
+        80.0,
+    );
 
-#[macroquad::main(conf)]
-async fn main() {
-    let mut camera = PlayerCamera::new(vec3(1., 10., 1.));
+    let mut grabbed = false;
 
-    let skybox_texture = load_texture("textures/skybox_sky.png").await.unwrap();
-    let mut cube = mesh_ex::gen_cube(1.0, 1.0, 1.0);
-    cube.texture = Some(skybox_texture);
-
-    loop {
-        if is_key_pressed(KeyCode::Escape) {
-            camera.toggle_grab();
+    while !rl.window_should_close() {
+        if rl.is_key_pressed(KeyboardKey::KEY_ESCAPE) {
+            player_camera::toggle_grab(&mut rl, &mut grabbed);
         }
 
-        let delta = get_frame_time();
-        camera.update(delta);
+        if grabbed {
+            update_camera(&rl, &mut camera);
+        }
 
-        clear_background(BLACK);
+        let mut d = rl.begin_drawing(&thr);
 
-        camera.apply();
-        // set_camera(&Camera3D {
-        //     position: vec3(1.0, 1.0, 1.0),
-        //     target: vec3(5.0, 0.0, 5.0),
-        //     ..Default::default()
-        // });
+        d.clear_background(Color::BLACK);
+
         {
-            draw_grid(100, 10.0, WHITE, GRAY);
-            draw_cube(vec3(0., 1., -5.), vec3(2., 2., 2.), None, RED); // big red cube ahead
-            draw_mesh(&cube);
-        }
-        set_default_camera();
+            let mut d3d = d.begin_mode3D(camera);
 
-        draw_fps();
-        next_frame().await;
+            d3d.draw_grid(100, 10.0);
+        }
+
+        d.draw_fps(0, 0);
     }
 }
