@@ -4,10 +4,13 @@
 )]
 
 mod player_camera;
+mod skybox;
 
 use player_camera::update_camera;
 
 use raylib::prelude::*;
+
+use crate::skybox::Skybox;
 
 fn main() {
     let (mut rl, thr) = raylib::init()
@@ -28,6 +31,11 @@ fn main() {
 
     let mut grabbed = false;
 
+    // skybox
+    let image = Image::load_image("textures/skybox_sky.png").unwrap();
+    let skybox = Skybox::new(&mut rl, &thr, &image);
+    drop(image);
+
     while !rl.window_should_close() {
         if rl.is_key_pressed(KeyboardKey::KEY_ESCAPE) {
             player_camera::toggle_grab(&mut rl, &mut grabbed);
@@ -43,6 +51,8 @@ fn main() {
 
         {
             let mut d3d = d.begin_mode3D(camera);
+
+            skybox.draw(&mut d3d);
 
             d3d.draw_grid(100, 10.0);
         }
