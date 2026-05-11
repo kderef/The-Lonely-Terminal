@@ -8,6 +8,8 @@ typedef struct {
         Vector3 position;
         PlayerCamera camera;
     };
+    float height;
+    Vector3 velocity;
 } Player;
 
 Player player_new();

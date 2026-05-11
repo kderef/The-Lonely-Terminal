@@ -29,7 +29,7 @@ typedef struct {
     GameConfig config;
     bool running;
     bool debug;
-
+    bool freemove;
 
     // UI
     PauseMenu pause_menu;

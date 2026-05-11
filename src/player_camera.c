@@ -7,10 +7,10 @@
 
 #include <stdint.h>
 
-PlayerCamera player_camera_new() {
+PlayerCamera player_camera_new(Vector3 position) {
     PlayerCamera pc = {
         .fovy = 75.0,
-        .position = {1, 0, 1},
+        .position = position,
         .projection = CAMERA_PERSPECTIVE,
         .target = {2, 1, 2},
         .up = {0, 1, 0},

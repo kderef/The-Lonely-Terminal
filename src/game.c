@@ -11,7 +11,8 @@ Game game_init(GameConfig conf) {
     Game g = {
         .config = conf,
         .running = true,
-        .debug =true,
+        .debug = true,
+        .freemove = false,
         .pause_menu = pause_menu_new(),
         .player = player_new(),
     };
@@ -78,11 +79,12 @@ void game_update(Game* g) {
     if (IsKeyPressed(KEY_F1)) {
         g->debug = !g->debug;
     }
+    if (IsKeyPressed(KEY_F2)) g->freemove = !g->freemove;
 
     if (!paused) {
         // UpdateCamera(&g->player_camera.camera, CAMERA_FIRST_PERSON);
         player_update_camera(&g->player);
-        player_update_movement(&g->player, g->debug);
+        player_update_movement(&g->player, g->freemove);
     }
 }
 
@@ -119,10 +121,14 @@ void game_draw(Game* g) {
         #define DEBUG_LINE(...) DrawText((text = TextFormat(__VA_ARGS__)), x, y += font_size, font_size, COLOR)
 
         DEBUG_LINE("FPS: %d", GetFPS());
-        DEBUG_LINE("resolution: %dx%d", GetScreenWidth(), GetScreenWidth());
+        DEBUG_LINE("resolution: %dx%d", GetScreenWidth(), GetScreenHeight());
         DEBUG_LINE("fullscreen: %d", IsWindowFullscreen());
         DEBUG_LINE("MSAA 4x: %d", IsWindowState(FLAG_MSAA_4X_HINT));
         DEBUG_LINE("vsync: %d", IsWindowState(FLAG_VSYNC_HINT));
+        y += font_size;
+        DEBUG_LINE("freemove: %d", g->freemove);
+        DEBUG_LINE("player_velocity: (%f, %f, %f)", g->player.velocity.x, g->player.velocity.y, g->player.velocity.z);
+        DEBUG_LINE("player_position: (%f, %f, %f)", g->player.position.x, g->player.position.y, g->player.position.z);
 
         #undef DEBUG_LINE
     }

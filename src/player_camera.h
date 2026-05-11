@@ -25,7 +25,7 @@ typedef struct {
 
 /**********************************************************************/
 
-PlayerCamera player_camera_new();
+PlayerCamera player_camera_new(Vector3 position);
 void player_camera_set_grab(PlayerCamera*, bool);
 
 // Update the camera's target to mouse movement
