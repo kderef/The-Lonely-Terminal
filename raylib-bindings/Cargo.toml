@@ -1,0 +1,8 @@
+[package]
+name = "raylib-bindings"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bitflags = "2.13.2"
+raylib-ffi = "5.5.1"
