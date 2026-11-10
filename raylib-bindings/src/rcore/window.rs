@@ -5,34 +5,36 @@ use std::{
     str::Utf8Error,
 };
 
+use bitflags::bitflags;
+
 use crate::{image::Image, math::Vector2};
 
 /// raylib window handle, see `init_window()`
 /// `close_window()` is replaced with drop.
+#[derive(Debug)]
 pub struct Window(());
 
-/// System/Window config flags
-/// NOTE: Every bit registers one state (use it with bit masks)
-#[allow(non_camel_case_types)]
-#[derive(Clone, Copy, Debug)]
-#[repr(u32)]
-pub enum ConfigFlags {
-    FLAG_VSYNC_HINT = 64,
-    FLAG_FULLSCREEN_MODE = 2,
-    FLAG_WINDOW_RESIZABLE = 4,
-    FLAG_WINDOW_UNDECORATED = 8,
-    FLAG_WINDOW_HIDDEN = 128,
-    FLAG_WINDOW_MINIMIZED = 512,
-    FLAG_WINDOW_MAXIMIZED = 1_024,
-    FLAG_WINDOW_UNFOCUSED = 2_048,
-    FLAG_WINDOW_TOPMOST = 4_096,
-    FLAG_WINDOW_ALWAYS_RUN = 256,
-    FLAG_WINDOW_TRANSPARENT = 16,
-    FLAG_WINDOW_HIGHDPI = 8_192,
-    FLAG_WINDOW_MOUSE_PASSTHROUGH = 16_384,
-    FLAG_BORDERLESS_WINDOWED_MODE = 32_768,
-    FLAG_MSAA_4X_HINT = 32,
-    FLAG_INTERLACED_HINT = 65_536,
+bitflags! {
+    /// System/Window config flags
+    /// NOTE: Every bit registers one state (use it with bit masks)
+    pub struct ConfigFlags: u32 {
+        const FLAG_VSYNC_HINT = 64;
+        const FLAG_FULLSCREEN_MODE = 2;
+        const FLAG_WINDOW_RESIZABLE = 4;
+        const FLAG_WINDOW_UNDECORATED = 8;
+        const FLAG_WINDOW_HIDDEN = 128;
+        const FLAG_WINDOW_MINIMIZED = 512;
+        const FLAG_WINDOW_MAXIMIZED = 1_024;
+        const FLAG_WINDOW_UNFOCUSED = 2_048;
+        const FLAG_WINDOW_TOPMOST = 4_096;
+        const FLAG_WINDOW_ALWAYS_RUN = 256;
+        const FLAG_WINDOW_TRANSPARENT = 16;
+        const FLAG_WINDOW_HIGHDPI = 8_192;
+        const FLAG_WINDOW_MOUSE_PASSTHROUGH = 16_384;
+        const FLAG_BORDERLESS_WINDOWED_MODE = 32_768;
+        const FLAG_MSAA_4X_HINT = 32;
+        const FLAG_INTERLACED_HINT = 65_536;
+    }
 }
 
 impl Drop for Window {
@@ -40,6 +42,170 @@ impl Drop for Window {
         unsafe {
             raylib_ffi::CloseWindow();
         }
+    }
+}
+
+impl Window {
+    /// Initialize window and OpenGL context.
+    /// panics if title is not a valid string
+    pub fn init(width: i32, height: i32, title: &str) -> Self {
+        init_window(width, height, title)
+    }
+
+    /// Check if application should close (KEY_ESCAPE pressed or windows close icon clicked)
+    pub fn should_close(&self) -> bool {
+        window_should_close()
+    }
+
+    /// Check if window has been initialized successfully
+    pub fn is_ready(&self) -> bool {
+        is_window_ready()
+    }
+
+    /// Check if window is currently fullscreen
+    pub fn is_fullscreen(&self) -> bool {
+        is_window_fullscreen()
+    }
+
+    /// Check if window is currently hidden
+    pub fn is_hidden(&self) -> bool {
+        is_window_hidden()
+    }
+
+    /// Check if window is currently minimized
+    pub fn is_window_minimized(&self) -> bool {
+        is_window_minimized()
+    }
+
+    /// Check if window is currently maximized
+    pub fn is_maximized(&self) -> bool {
+        is_window_maximized()
+    }
+
+    /// Check if window is currently focused
+    pub fn is_focused(&self) -> bool {
+        is_window_focused()
+    }
+
+    /// Check if window has been resized last frame
+    pub fn is_resized(&self) -> bool {
+        is_window_resized()
+    }
+
+    /// Check if one specific window flag is enabled
+    pub fn is_state(&self, flag: ConfigFlags) -> bool {
+        is_window_state(flag)
+    }
+
+    /// Set window configuration state using flags
+    pub fn set_tate(&self, flags: ConfigFlags) {
+        set_window_state(flags)
+    }
+
+    /// Clear window configuration state flags
+    pub fn clear_state(&self, flags: ConfigFlags) {
+        clear_window_state(flags);
+    }
+
+    /// Toggle window state: fullscreen/windowed, resizes monitor to match window resolution
+    pub fn toggle_fullscreen(&self) {
+        toggle_fullscreen();
+    }
+
+    /// Toggle window state: borderless windowed, resizes window to match monitor resolution
+    pub fn toggle_borderless_windowed(&self) {
+        toggle_borderless_windowed();
+    }
+
+    /// Set window state: maximized, if resizable
+    pub fn maximize(&self) {
+        maximize_window();
+    }
+
+    /// Set window state: minimized, if resizable
+    pub fn minimize(&self) {
+        minimize_window();
+    }
+
+    /// Restore window from being minimized/maximized
+    pub fn restore(&self) {
+        restore_window();
+    }
+
+    /// Set icon for window (single image, RGBA 32bit)
+    pub fn set_icon(&self, image: Image) {
+        set_window_icon(image);
+    }
+
+    /// Set icon for window (multiple images, RGBA 32bit)
+    pub fn set_icons(&self, images: &[Image], count: i32) {
+        set_window_icons(images, count);
+    }
+
+    /// Set title for window
+    /// panics if title is invalid.
+    pub fn set_title(&self, title: &str) {
+        set_window_title(title);
+    }
+
+    /// Set window position on screen
+    pub fn set_position(&self, x: i32, y: i32) {
+        set_window_position(x, y);
+    }
+
+    /// Set monitor for the current window
+    pub fn set_monitor(&self, monitor: i32) {
+        set_window_monitor(monitor);
+    }
+
+    /// Set window minimum dimensions (for FLAG_WINDOW_RESIZABLE)
+    pub fn set_min_size(&self, width: i32, height: i32) {
+        set_window_min_size(width, height);
+    }
+
+    /// Set window maximum dimensions (for FLAG_WINDOW_RESIZABLE)
+    pub fn set_max_size(&self, width: i32, height: i32) {
+        set_window_max_size(width, height);
+    }
+
+    /// Set window dimensions
+    pub fn set_size(&self, width: i32, height: i32) {
+        set_window_size(width, height);
+    }
+
+    /// Set window opacity [0.0f..1.0f]
+    pub fn set_opacity(&self, opacity: f32) {
+        unsafe { raylib_ffi::SetWindowOpacity(opacity) }
+    }
+
+    /// Set window focused
+    pub fn set_focused(&self) {
+        set_window_focused();
+    }
+
+    /// Get native window handle
+    pub fn handle(&self) -> *mut c_void {
+        get_window_handle()
+    }
+
+    /// Get current screen width
+    pub fn screen_width(&self) -> i32 {
+        get_screen_width()
+    }
+
+    /// Get current screen height
+    pub fn screen_height(&self) -> i32 {
+        get_screen_height()
+    }
+
+    /// Get current render width (it considers HiDPI)
+    pub fn render_width(&self) -> i32 {
+        get_render_width()
+    }
+
+    /// Get current render height (it considers HiDPI)
+    pub fn render_height(&self) -> i32 {
+        get_render_height()
     }
 }
 
@@ -97,16 +263,16 @@ pub fn is_window_resized() -> bool {
 
 /// Check if one specific window flag is enabled
 pub fn is_window_state(flag: ConfigFlags) -> bool {
-    unsafe { raylib_ffi::IsWindowState(flag as u32) }
+    unsafe { raylib_ffi::IsWindowState(flag.bits()) }
 }
 
 /// Set window configuration state using flags
 pub fn set_window_state(flags: ConfigFlags) {
-    unsafe { raylib_ffi::SetWindowState(flags as u32) }
+    unsafe { raylib_ffi::SetWindowState(flags.bits()) }
 }
 /// Clear window configuration state flags
 pub fn clear_window_state(flags: ConfigFlags) {
-    unsafe { raylib_ffi::ClearWindowState(flags as u32) }
+    unsafe { raylib_ffi::ClearWindowState(flags.bits()) }
 }
 /// Toggle window state: fullscreen/windowed, resizes monitor to match window resolution
 pub fn toggle_fullscreen() {
