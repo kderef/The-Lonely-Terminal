@@ -1,19 +1,109 @@
 //! File system management functions
-/* TODO
-unsigned char *LoadFileData(const char *fileName, int *dataSize); // Load file data as byte array (read)
-void UnloadFileData(unsigned char *data);                     // Unload file data allocated by LoadFileData()
-bool SaveFileData(const char *fileName, const void *data, int dataSize); // Save data to file from byte array (write), returns true on success
-bool ExportDataAsCode(const unsigned char *data, int dataSize, const char *fileName); // Export data to code (.h), returns true on success
-char *LoadFileText(const char *fileName);                     // Load text data from file (read), returns a '\0' terminated string
-void UnloadFileText(char *text);                              // Unload file text data allocated by LoadFileText()
-bool SaveFileText(const char *fileName, const char *text);    // Save text data to file (write), string must be '\0' terminated, returns true on success
+//! WARNING: please consider using the functions in `std::fs` instead.
+
+use std::ffi::{CStr, CString, c_void};
+
+/// Load file data as byte array (read), returns `None` if file failed to be read.
+/// WARNING: please prefer using functions in `std::fs`, these do not check for errors.
+pub fn load_file_data(file_name: &str) -> Option<Vec<u8>> {
+    let file_name = CString::new(file_name).expect("file name should be valid utf8");
+
+    let mut data_size = 0;
+    let data_raw = unsafe { raylib_ffi::LoadFileData(file_name.as_ptr(), &mut data_size) };
+
+    if data_raw.is_null() || data_size < 0 {
+        return None;
+    }
+
+    // construct vec
+    let data = unsafe { Vec::from_raw_parts(data_raw, data_size as usize, data_size as usize) };
+
+    unsafe {
+        raylib_ffi::UnloadFileData(data_raw);
+    }
+
+    Some(data)
+}
+
+/// Save data to file from byte array (write), returns true on success
+/// WARNING: please prefer using functions in `std::fs`
+pub fn save_file_data(file_name: &str, data: &[u8]) -> bool {
+    let file_name_c = CString::new(file_name).expect("file name should be valid utf8");
+
+    unsafe {
+        raylib_ffi::SaveFileData(
+            file_name_c.as_ptr(),
+            data.as_ptr() as *mut c_void,
+            data.len() as i32,
+        )
+    }
+}
+
+/// Export data to code (.h), returns true on success
+pub fn export_data_as_code(data: &[u8], file_name: &str) -> bool {
+    let file_name_c = CString::new(file_name).expect("file name should be valid utf8");
+
+    unsafe { raylib_ffi::ExportDataAsCode(data.as_ptr(), data.len() as i32, file_name_c.as_ptr()) }
+}
+
+/// Load text data from file (read), returns `None` if file failed to be read.
+pub fn load_file_text(file_name: &str) -> Option<String> {
+    let file_name_c = CString::new(file_name).expect("file name should be valid utf8");
+
+    let file_text_raw = unsafe { raylib_ffi::LoadFileText(file_name_c.as_ptr()) };
+
+    if file_text_raw.is_null() {
+        return None;
+    }
+
+    let file_text = unsafe { CStr::from_ptr(file_text_raw) }
+        .to_string_lossy()
+        .into_owned();
+
+    unsafe {
+        raylib_ffi::UnloadFileText(file_text_raw);
+    }
+
+    Some(file_text)
+}
+
+/// Save text data to file (write), returns true on success
+/// WARNING: please prefer using functions in `std::fs`
+pub fn save_file_text(file_name: &str, text: &str) -> bool {
+    let file_name_c = CString::new(file_name).expect("file name should be valid utf8");
+    let text_c = CString::new(text).expect("text should be valid utf8");
+
+    unsafe { raylib_ffi::SaveFileText(file_name_c.as_ptr(), text_c.as_ptr() as *mut i8) }
+}
 
 // File access custom callbacks
 // WARNING: Callbacks setup is intended for advanced users
-void SetLoadFileDataCallback(LoadFileDataCallback callback);  // Set custom file binary data loader
-void SetSaveFileDataCallback(SaveFileDataCallback callback);  // Set custom file binary data saver
-void SetLoadFileTextCallback(LoadFileTextCallback callback);  // Set custom file text data loader
-void SetSaveFileTextCallback(SaveFileTextCallback callback);  // Set custom file text data saver
+
+pub use raylib_ffi::{
+    LoadFileDataCallback, LoadFileTextCallback, SaveFileDataCallback, SaveFileTextCallback,
+};
+
+/// Set custom file binary data loader
+pub fn set_load_file_data_callback(callback: LoadFileDataCallback) {
+    unsafe { raylib_ffi::SetLoadFileDataCallback(callback) }
+}
+
+/// Set custom file binary data saver
+pub fn set_save_file_data_callback(callback: SaveFileDataCallback) {
+    unsafe { raylib_ffi::SetSaveFileDataCallback(callback) }
+}
+
+/// Set custom file text data loader
+pub fn set_load_file_text_callback(callback: LoadFileTextCallback) {
+    unsafe { raylib_ffi::SetLoadFileTextCallback(callback) }
+}
+
+/// Set custom file text data saver
+pub fn set_save_file_text_callback(callback: SaveFileTextCallback) {
+    unsafe { raylib_ffi::SetSaveFileTextCallback(callback) }
+}
+
+/* TODO
 
 int FileRename(const char *fileName, const char *fileRename); // Rename file (if exists), returns 0 on success
 int FileRemove(const char *fileName);                         // Remove file (if exists), returns 0 on success

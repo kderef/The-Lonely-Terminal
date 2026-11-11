@@ -1,6 +1,9 @@
+pub mod automation;
+pub mod compression;
 pub mod cursor;
 pub mod custom_frame_control;
 pub mod drawing;
+pub mod filesystem;
 pub mod logging;
 pub mod memory;
 pub mod misc;
